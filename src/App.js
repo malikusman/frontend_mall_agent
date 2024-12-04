@@ -1,23 +1,32 @@
-import logo from './logo.svg';
-import './App.css';
+import React, { useState } from "react";
+import Chat from "./Chat";
+import "./App.css";
 
 function App() {
+  const [showChat, setShowChat] = useState(false);
+
+  const handleBubbleClick = () => {
+    setShowChat(true);
+  };
+
   return (
     <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
+      {!showChat && (
+        <>
+          <header className="App-header">
+            <h1>Welcome to Mall Chatbot</h1>
+            <p>Your friendly mall assistant is here to help!</p>
+          </header>
+          <div className="chat-bubble" onClick={handleBubbleClick}>
+            <img
+              src="https://www.shutterstock.com/image-vector/chatbot-icon-line-vector-isolate-260nw-1841577400.jpg"
+              alt="Chat Icon"
+              className="chat-icon"
+            />
+          </div>
+        </>
+      )}
+      {showChat && <Chat />}
     </div>
   );
 }
