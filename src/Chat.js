@@ -12,29 +12,27 @@ function Chat() {
 
   useEffect(() => {
     socket.on("response", (data) => {
-        console.log("Received socket data:", data); // Debug log
+      console.log("Received socket data:", data); // Debug log
 
-        // Check if there's a response text
-        if (data.response) {
-            setMessages((prev) => [
-                ...prev,
-                { type: "text", text: data.response, sender: "bot" },
-            ]);
-        }
+      if (data.response && data.products.length == 0) {
+        setMessages((prev) => [
+          ...prev,
+          { type: "text", text: data.response, sender: "bot" },
+        ]);
+      }
 
-        // Check if there are products
-        if (data.products && data.products.length > 0) {
-            setMessages((prev) => [
-                ...prev,
-                { type: "products", products: data.products },
-            ]);
-        }
+      if (data.products && data.products.length > 0) {
+        setMessages((prev) => [
+          ...prev,
+          { type: "products", products: data.products },
+        ]);
+      }
     });
 
     return () => {
-        socket.off("response");
+      socket.off("response");
     };
-}, []);
+  }, []);
 
   const handleSend = () => {
     if (input.trim() !== "") {
@@ -47,38 +45,7 @@ function Chat() {
   return (
     <div className="chat-container">
       <div className="chat-header">Mall Chatbot</div>
-
-
       <div className="chat-body">
-      {messages.map((msg, index) => {
-        if (msg.type === "text") {
-            return (
-                <div
-                  key={index}
-                  className={`chat-message ${
-                    msg.sender === "user" ? "user-message" : "bot-message"
-                  }`}
-                >
-                  {msg.text}
-                </div>
-              );
-        } else if (msg.type === "products") {
-          return (
-            <div key={index} className="product-list-container">
-              {msg.products.map((product, idx) => (
-                <div key={idx} className={`product-card responsive-product-card`}>
-                  {/* ... */}
-                </div>
-              ))}
-            </div>
-          );
-        } else {
-          return null;
-        }
-      })}
-    </div>
-
-      {/* <div className="chat-body">
         {messages.map((msg, index) => {
           if (msg.type === "text") {
             return (
@@ -93,7 +60,7 @@ function Chat() {
             );
           } else if (msg.type === "products") {
             return (
-              <div key={index} className="product-list">
+              <div key={index} className="product-list-container">
                 {msg.products.map((product, idx) => (
                   <div key={idx} className="product-card">
                     <img
@@ -102,9 +69,10 @@ function Chat() {
                       className="product-image"
                     />
                     <div className="product-info">
-                      <h4>{product.name}</h4>
-                      <p>{product.description}</p>
-                      <p><strong>{product.price} AED</strong></p>
+                      <h4 className="product-name">{product.name}</h4>
+                      <p className="product-description">{product.description}</p>
+                      <p className="product-price">{product.price} AED</p>
+                      <button className="buy-now-button">Buy Now</button>
                     </div>
                   </div>
                 ))}
@@ -114,8 +82,7 @@ function Chat() {
             return null;
           }
         })}
-      </div> */}
-      
+      </div>
       <div className="chat-footer">
         <input
           type="text"
