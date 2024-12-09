@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import io from "socket.io-client";
-import DatePicker from "react-datepicker"; // Import DatePicker component
-import "react-datepicker/dist/react-datepicker.css"; // Import DatePicker CSS
+import DatePicker from "react-datepicker";
+import "react-datepicker/dist/react-datepicker.css";
 import "./Chat.css";
 
 const socket = io("http://127.0.0.1:5000", {
@@ -13,11 +13,11 @@ function Chat() {
   const [input, setInput] = useState("");
   const [showCalendar, setShowCalendar] = useState(false);
   const [pickupDate, setPickupDate] = useState(null);
+  const [isLoading, setIsLoading] = useState(false); // Track loading state
 
   useEffect(() => {
     socket.on("response", (data) => {
-      console.log("Received socket data:", data); // Debug log
-
+      setIsLoading(false); // Stop loading when response is received
       if (data.response && data.products.length === 0) {
         setMessages((prev) => [
           ...prev,
@@ -39,24 +39,22 @@ function Chat() {
   }, []);
 
   const handleBuyNow = (product) => {
-    // Add "Pay Now" link
     setMessages((prev) => [
       ...prev,
       {
         type: "payment",
         productName: product.name,
-        paymentLink: "https://stripe.com", // Static Stripe link for demo
+        paymentLink: "https://stripe.com",
       },
     ]);
   };
 
   const handlePaymentClick = () => {
-    // Static message after payment
     setMessages((prev) => [
       ...prev,
       { type: "text", text: "Payment done!", sender: "bot" },
     ]);
-    setShowCalendar(true); // Show calendar for pickup date
+    setShowCalendar(true);
   };
 
   const handleDateSelect = (date) => {
@@ -66,12 +64,13 @@ function Chat() {
       { type: "text", text: `Pickup scheduled for ${date.toLocaleString()}`, sender: "bot" },
       { type: "text", text: "Thanks for shopping with us!", sender: "bot" },
     ]);
-    setShowCalendar(false); // Hide calendar after selecting the date
+    setShowCalendar(false);
   };
 
   const handleSend = () => {
     if (input.trim() !== "") {
       setMessages([...messages, { type: "text", text: input, sender: "user" }]);
+      setIsLoading(true); // Start loading when query is sent
       socket.emit("chat", { query: input });
       setInput("");
     }
@@ -121,10 +120,10 @@ function Chat() {
           } else if (msg.type === "payment") {
             return (
               <div key={index} className="payment-message">
-                <p>Pay for {msg.productName}:</p>
+                <p className="heading">Pay for {msg.productName}:</p>
                 <a
                   href={msg.paymentLink}
-                  target="#"
+                  target="_blank"
                   rel="noopener noreferrer"
                   className="payment-link"
                   onClick={handlePaymentClick}
@@ -138,13 +137,20 @@ function Chat() {
                 </a>
               </div>
             );
-          } else {
-            return null;
           }
         })}
+
+        {/* Loading animation */}
+        {isLoading && (
+          <div className="loading-container">
+            <div className="spinner"></div>
+            <p>Loading, please wait...</p>
+          </div>
+        )}
+
         {showCalendar && (
           <div className="calendar-container">
-            <p>Please select your pickup date and time:</p>
+            <p className="heading">Please select your pickup date and time:</p>
             <DatePicker
               selected={pickupDate}
               onChange={handleDateSelect}
