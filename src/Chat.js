@@ -22,27 +22,41 @@ function Chat() {
 
     socket.on("response", (data) => {
       setIsLoading(false);
+  
+      // 1) If there's a plain text message from the bot
       if (data.message) {
         setMessages((prev) => [
           ...prev,
           { type: "text", text: data.message, sender: "bot" },
         ]);
       }
-
+  
+      // 2) If there's an LLM text answer
       if (data.response) {
+        // Here, you might see the raw JSON output in the text,
+        // but let's keep it for debugging or user reading
         setMessages((prev) => [
           ...prev,
           { type: "text", text: data.response, sender: "bot" },
         ]);
       }
-
+  
+      // 3) If there's an error
       if (data.error) {
         setMessages((prev) => [
           ...prev,
           { type: "text", text: `Error: ${data.error}`, sender: "bot" },
         ]);
       }
-    });
+  
+      // 4) **If we got structured products** from parse_products
+      if (data.products && data.products.length > 0) {
+        setMessages((prev) => [
+          ...prev,
+          { type: "products", products: data.products, sender: "bot" },
+        ]);
+      }
+    });  
 
     return () => {
       socket.off("response");
@@ -87,8 +101,12 @@ function Chat() {
   return (
     <div className="chat-container">
       <div className="chat-header">Mall Chatbot</div>
-      <div className="chat-body">
-        {messages.map((msg, index) => (
+
+    <div className="chat-body">
+    {messages.map((msg, index) => {
+      if (msg.type === "text") {
+        // Normal text bubble
+        return (
           <div
             key={index}
             className={`chat-message ${
@@ -97,13 +115,39 @@ function Chat() {
           >
             {msg.text}
           </div>
-        ))}
-        {isLoading && (
-          <div className="loading-container">
-            <p>Loading...</p>
+        );
+      } else if (msg.type === "products") {
+        // Product carousel
+        return (
+          <div key={index} className="product-list-container bot-message">
+            {msg.products.map((product, i) => (
+              <div className="product-card" key={i}>
+                <img
+                  className="product-image"
+                  src={product.image_url}
+                  alt={product.name}
+                />
+                <div className="product-name">{product.name}</div>
+                <div className="product-price">{product.price} AED</div>
+                <div className="product-description">{product.description}</div>
+                <button className="buy-now-button">Buy Now</button>
+              </div>
+            ))}
           </div>
-        )}
+        );
+      }
+      return null;
+    })}
+
+    {isLoading && (
+      <div className="loading-container">
+        <p>Loading...</p>
       </div>
+    )}
+  </div>
+
+
+
       <div className="chat-footer">
         <input
           type="text"
