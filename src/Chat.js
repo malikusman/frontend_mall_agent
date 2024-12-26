@@ -14,10 +14,10 @@ function Chat() {
 
   useEffect(() => {
     socket.on("connect", () => {
-      setMessages((prev) => [
-        ...prev,
-        { type: "text", text: "Welcome! Please provide your email to continue.", sender: "bot" },
-      ]);
+      // setMessages((prev) => [
+      //   ...prev,
+      //   { type: "text", text: "Welcome! Please provide your email to continue.", sender: "bot" },
+      // ]);
     });
 
     socket.on("response", (data) => {
