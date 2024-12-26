@@ -14,49 +14,54 @@ function Chat() {
 
   useEffect(() => {
     socket.on("connect", () => {
-      // setMessages((prev) => [
-      //   ...prev,
-      //   { type: "text", text: "Welcome! Please provide your email to continue.", sender: "bot" },
-      // ]);
+      // Optionally handle connect event...
     });
 
     socket.on("response", (data) => {
       setIsLoading(false);
-  
-      // 1) If there's a plain text message from the bot
+
+      // 1) If there's a plain text "message" from the bot
       if (data.message) {
         setMessages((prev) => [
           ...prev,
           { type: "text", text: data.message, sender: "bot" },
         ]);
       }
-  
-      // 2) If there's an LLM text answer
-      if (data.response) {
-        // Here, you might see the raw JSON output in the text,
-        // but let's keep it for debugging or user reading
-        setMessages((prev) => [
-          ...prev,
-          { type: "text", text: data.response, sender: "bot" },
-        ]);
-      }
-  
-      // 3) If there's an error
+
+      // 2) If there's an error
       if (data.error) {
         setMessages((prev) => [
           ...prev,
           { type: "text", text: `Error: ${data.error}`, sender: "bot" },
         ]);
       }
-  
-      // 4) **If we got structured products** from parse_products
+
+      // 3) If we got structured products from parse_products
       if (data.products && data.products.length > 0) {
         setMessages((prev) => [
           ...prev,
           { type: "products", products: data.products, sender: "bot" },
         ]);
       }
-    });  
+
+      // 4) If there's an LLM text answer
+      //    We'll remove the JSON chunk (if any) from the text
+      if (data.response) {
+        let cleanedText = data.response.replace(
+          /PRODUCTS_JSON:\s*\[.*?\]/s, // Regex to match the entire JSON block
+          ""
+        );
+        cleanedText = cleanedText.trim();
+
+        // Only show leftover text if there's anything left
+        if (cleanedText.length > 0) {
+          setMessages((prev) => [
+            ...prev,
+            { type: "text", text: cleanedText, sender: "bot" },
+          ]);
+        }
+      }
+    });
 
     return () => {
       socket.off("response");
@@ -65,6 +70,7 @@ function Chat() {
   }, []);
 
   const handleSend = () => {
+    // If we don't have the user's email yet...
     if (!session.email) {
       setSession({ ...session, email: input });
       setMessages((prev) => [
@@ -76,6 +82,7 @@ function Chat() {
       return;
     }
 
+    // If we don't have the user's name yet...
     if (!session.name) {
       setSession({ ...session, name: input });
       setMessages((prev) => [
@@ -87,6 +94,7 @@ function Chat() {
       return;
     }
 
+    // Otherwise, send the user's message to the backend
     if (input.trim() !== "") {
       setMessages((prev) => [
         ...prev,
@@ -102,51 +110,51 @@ function Chat() {
     <div className="chat-container">
       <div className="chat-header">Mall Chatbot</div>
 
-    <div className="chat-body">
-    {messages.map((msg, index) => {
-      if (msg.type === "text") {
-        // Normal text bubble
-        return (
-          <div
-            key={index}
-            className={`chat-message ${
-              msg.sender === "user" ? "user-message" : "bot-message"
-            }`}
-          >
-            {msg.text}
-          </div>
-        );
-      } else if (msg.type === "products") {
-        // Product carousel
-        return (
-          <div key={index} className="product-list-container bot-message">
-            {msg.products.map((product, i) => (
-              <div className="product-card" key={i}>
-                <img
-                  className="product-image"
-                  src={product.image_url}
-                  alt={product.name}
-                />
-                <div className="product-name">{product.name}</div>
-                <div className="product-price">{product.price} AED</div>
-                <div className="product-description">{product.description}</div>
-                <button className="buy-now-button">Buy Now</button>
+      <div className="chat-body">
+        {messages.map((msg, index) => {
+          if (msg.type === "text") {
+            // Normal text bubble
+            return (
+              <div
+                key={index}
+                className={`chat-message ${
+                  msg.sender === "user" ? "user-message" : "bot-message"
+                }`}
+              >
+                {msg.text}
               </div>
-            ))}
+            );
+          } else if (msg.type === "products") {
+            // Product carousel
+            return (
+              <div key={index} className="product-list-container bot-message">
+                {msg.products.map((product, i) => (
+                  <div className="product-card" key={i}>
+                    <img
+                      className="product-image"
+                      src={product.image_url}
+                      alt={product.name}
+                    />
+                    <div className="product-name">{product.name}</div>
+                    <div className="product-price">{product.price} AED</div>
+                    <div className="product-description">
+                      {product.description}
+                    </div>
+                    <button className="buy-now-button">Buy Now</button>
+                  </div>
+                ))}
+              </div>
+            );
+          }
+          return null;
+        })}
+
+        {isLoading && (
+          <div className="loading-container">
+            <p>Loading...</p>
           </div>
-        );
-      }
-      return null;
-    })}
-
-    {isLoading && (
-      <div className="loading-container">
-        <p>Loading...</p>
+        )}
       </div>
-    )}
-  </div>
-
-
 
       <div className="chat-footer">
         <input
